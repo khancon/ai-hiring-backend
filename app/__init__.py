@@ -22,6 +22,39 @@ def create_app():
     # from app.routes.ai_routes import ai_bp
     # app.register_blueprint(ai_bp)
 
+    @app.route("/")
+    def landing_page():
+        return (
+            """
+            <h2>Welcome to the AI Hiring Backend API!</h2>
+            <p>This API offers AI-powered hiring automation features. Use the following endpoints:</p>
+            <ul>
+                <li><strong>GET /health</strong> – Health check for the service.</li>
+                <li><strong>POST /generate-jd</strong> – Generate a job description.<br>
+                    <em>Body:</em> JSON with title, seniority, skills, location
+                </li>
+                <li><strong>POST /screen-resume</strong> – Screen a resume against a job description.<br>
+                    <em>Form fields:</em> job_description (text), resume (file upload)
+                </li>
+                <li><strong>POST /generate-questions</strong> – Generate screening questions for a job.<br>
+                    <em>Body:</em> JSON with title, skills
+                </li>
+                <li><strong>POST /evaluate</strong> – Evaluate candidate answers.<br>
+                    <em>Body:</em> JSON with questions, answers
+                </li>
+                <li><strong>POST /generate-feedback</strong> – Generate a feedback email for candidates.<br>
+                    <em>Body:</em> JSON with candidate_name, job_title, outcome, tone
+                </li>
+            </ul>
+            <p>See <strong>/health</strong> for a simple health check.<br>
+            For API usage, send POST requests as described above. You can test locally or remotely!</p>
+            """,
+            200,
+            {"Content-Type": "text/html"}
+        )
+
+
+
     # Simple health check route
     @app.route("/health")
     def health_check():
