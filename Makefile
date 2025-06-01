@@ -28,3 +28,9 @@ docker-run:
 	docker run --env-file .env -p 5000:5000 ai-hiring-backend
 
 docker: docker-build docker-run
+
+flask-run:
+	export FLASK_APP=app.py
+	export FLASK_ENV=development
+	@echo "Running Flask app..."
+	flask run

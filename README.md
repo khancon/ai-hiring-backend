@@ -89,20 +89,20 @@ Docker will look for your `.env` file in the context directory.
 
 Here are the main routes (assume prefix `/`):
 
-* POST /generate-jd: Generate job description
-  JSON body: { "title": "Backend Engineer", "seniority": "Senior", "skills": \["Python"], "location": "Remote" }
+* POST `/generate-jd`: Generate job description
+  JSON body: `{ "title": "Backend Engineer", "seniority": "Senior", "skills": \["Python"], "location": "Remote" }`
 
-* POST /screen-resume: Resume screening
+* POST `/screen-resume`: Resume screening
   multipart/form-data: resume file + job\_description (text)
 
-* POST /generate-questions: Screening questions
-  JSON body: { "title": "Frontend Engineer", "skills": \["React"] }
+* POST `/generate-questions`: Screening questions
+  JSON body: `{ "title": "Frontend Engineer", "skills": \["React"] }`
 
-* POST /evaluate: Evaluate answers
-  JSON body: { "questions": "...", "answers": "..." }
+* POST `/evaluate`: Evaluate answers
+  JSON body: `{ "questions": "...", "answers": "..." }`
 
-* POST /generate-feedback: Generate feedback email
-  JSON body: { "candidate\_name": "Jane", "job\_title": "Designer", "outcome": "rejected", "tone": "friendly" }
+* POST `/generate-feedback`: Generate feedback email
+  JSON body: `{ "candidate\_name": "Jane", "job\_title": "Designer", "outcome": "rejected", "tone": "friendly" }`
 
 ---
 
@@ -121,30 +121,6 @@ pytest
 
 * Unit tests for openai\_service.py are fully mocked.
 * Route tests (test\_ai\_routes.py) use Flask’s test client with mocks for all service functions.
-
----
-
-## File Structure
-
-.
-├── app/
-│   ├── **init**.py
-│   ├── config.py
-│   ├── routes/
-│   │   └── ai\_routes.py
-│   ├── services/
-│   │   └── openai\_service.py
-│   └── utils/
-│       └── resume\_parser.py
-├── tests/
-│   ├── test\_ai\_routes.py
-│   ├── test\_openai\_service.py
-│   └── test\_resume\_parser.py
-├── requirements.txt
-├── Dockerfile
-├── .env.example
-├── README.md
-└── Makefile
 
 ---
 
