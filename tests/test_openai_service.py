@@ -1,5 +1,6 @@
 from unittest.mock import patch
 from app.services import openai_service
+import pytest
 
 def fake_openai_response(content):
     # Helper to mimic OpenAI's response object
@@ -87,21 +88,18 @@ def test_generate_feedback_email():
 def test_screen_resume_edge_case_empty_resume():
     job_desc = "Looking for someone with leadership experience."
     resume_text = ""
-    with patch("app.services.openai_service.client.chat.completions.create", return_value=fake_openai_response("Should not be called")):
-        result = openai_service.screen_resume(job_desc, resume_text)
-    assert result == "Should not be called"
+    with pytest.raises(RuntimeError) as excinfo:
+        openai_service.screen_resume(job_desc, resume_text)
+    assert "Failed to screen resume" in str(excinfo.value)
 
 def test_generate_job_description_with_empty_skills():
-    # Test job description generation with empty skills list
     title = "DevOps Engineer"
     seniority = "Mid"
     skills = []
     location = "Onsite"
-    mock_response = "DevOps Engineer JD for onsite role."
-    with patch("app.services.openai_service.client.chat.completions.create", return_value=fake_openai_response(mock_response)):
-        jd = openai_service.generate_job_description(title, seniority, skills, location)
-    assert isinstance(jd, str)
-    assert "DevOps Engineer" in jd or "devops engineer" in jd.lower()
+    with pytest.raises(RuntimeError) as excinfo:
+        openai_service.generate_job_description(title, seniority, skills, location)
+    assert "Failed to generate job description" in str(excinfo.value)
 
 def test_generate_feedback_email_acceptance():
     candidate_name = "Ahmed Ali"
