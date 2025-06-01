@@ -53,3 +53,5 @@ pip-delete-this-directory.txt
 *.log
 .coverage
 .coverage.*
+htmlcov
+htmlcov/*

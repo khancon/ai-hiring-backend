@@ -2,10 +2,18 @@ from flask import Flask
 from flask_cors import CORS
 from app.config import Config
 from app.routes.ai_routes import ai_bp
+import logging
 
 def create_app():
     # Create the Flask app instance
     app = Flask(__name__)
+
+    logging.basicConfig(
+        level=logging.INFO,  # Or DEBUG for more verbosity
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    )
+    logger = logging.getLogger(__name__)
+    logger.info("Initializing AI Hiring Backend API...")
 
     # Load configuration from config.py
     app.config.from_object(Config)
