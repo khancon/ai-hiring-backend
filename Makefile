@@ -20,6 +20,15 @@ update-pip:
 pytest:
 	PYTHONPATH=. pytest
 
+pytest-ai-routes:
+	PYTHONPATH=. pytest tests/test_ai_routes.py
+
+pytest-openai-service:
+	PYTHONPATH=. pytest tests/test_openai_service.py
+
+pytest-resume-parser:
+	PYTHONPATH=. pytest tests/test_resume_parser.py
+
 print-env-vars:
 	@echo "OPEN_API_KEY=${OPEN_API_KEY}"
 
