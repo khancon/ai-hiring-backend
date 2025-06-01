@@ -89,19 +89,19 @@ Docker will look for your `.env` file in the context directory.
 
 Here are the main routes (assume prefix `/`):
 
-* POST `/generate-jd`: Generate job description
+* POST `/generate-jd`: Generate job description.
   JSON body: `{ "title": "Backend Engineer", "seniority": "Senior", "skills": \["Python"], "location": "Remote" }`
 
-* POST `/screen-resume`: Resume screening
+* POST `/screen-resume`: Resume screening.
   multipart/form-data: resume file + job\_description (text)
 
-* POST `/generate-questions`: Screening questions
+* POST `/generate-questions`: Screening questions.
   JSON body: `{ "title": "Frontend Engineer", "skills": \["React"] }`
 
-* POST `/evaluate`: Evaluate answers
+* POST `/evaluate`: Evaluate answers.
   JSON body: `{ "questions": "...", "answers": "..." }`
 
-* POST `/generate-feedback`: Generate feedback email
+* POST `/generate-feedback`: Generate feedback email.
   JSON body: `{ "candidate\_name": "Jane", "job\_title": "Designer", "outcome": "rejected", "tone": "friendly" }`
 
 ---
