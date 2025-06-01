@@ -50,8 +50,8 @@ pip install -r requirements.txt
 
 Create a `.env` file in the project root with the following:
 ```
-OPENAI\_API\_KEY=sk-xxxxxx         # Get from [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-OPENAI\_MODEL=gpt-4o              # Or your preferred model
+OPENAI_API_KEY=sk-xxxxxx         # Get from [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+OPENAI_MODEL=gpt-4o              # Or your preferred model
 DEBUG=True
 ```
 Note: Never commit your `.env` file to source control.
@@ -61,8 +61,8 @@ Note: Never commit your `.env` file to source control.
 ### 4. Run the Application
 
 ```
-export FLASK\_APP=app
-export FLASK\_ENV=development
+export FLASK_APP=app
+export FLASK_ENV=development
 flask run
 ```
 
