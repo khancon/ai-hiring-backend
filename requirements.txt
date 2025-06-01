@@ -19,7 +19,6 @@ iniconfig==2.1.0
 itsdangerous==2.2.0
 Jinja2==3.1.6
 jiter==0.10.0
-logging==0.4.9.6
 MarkupSafe==3.0.2
 mccabe==0.7.0
 openai==1.82.1
