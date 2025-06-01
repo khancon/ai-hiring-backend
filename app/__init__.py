@@ -29,20 +29,20 @@ def create_app():
             <h2>Welcome to the AI Hiring Backend API!</h2>
             <p>This API offers AI-powered hiring automation features. Use the following endpoints:</p>
             <ul>
-                <li><strong>GET /health</strong> – Health check for the service.</li>
-                <li><strong>POST /generate-jd</strong> – Generate a job description.<br>
+                <li><strong>GET /health</strong> - Health check for the service.</li>
+                <li><strong>POST /generate-jd</strong> - Generate a job description.<br>
                     <em>Body:</em> JSON with title, seniority, skills, location
                 </li>
-                <li><strong>POST /screen-resume</strong> – Screen a resume against a job description.<br>
+                <li><strong>POST /screen-resume</strong> - Screen a resume against a job description.<br>
                     <em>Form fields:</em> job_description (text), resume (file upload)
                 </li>
-                <li><strong>POST /generate-questions</strong> – Generate screening questions for a job.<br>
+                <li><strong>POST /generate-questions</strong> - Generate screening questions for a job.<br>
                     <em>Body:</em> JSON with title, skills
                 </li>
-                <li><strong>POST /evaluate</strong> – Evaluate candidate answers.<br>
+                <li><strong>POST /evaluate</strong> - Evaluate candidate answers.<br>
                     <em>Body:</em> JSON with questions, answers
                 </li>
-                <li><strong>POST /generate-feedback</strong> – Generate a feedback email for candidates.<br>
+                <li><strong>POST /generate-feedback</strong> - Generate a feedback email for candidates.<br>
                     <em>Body:</em> JSON with candidate_name, job_title, outcome, tone
                 </li>
             </ul>
