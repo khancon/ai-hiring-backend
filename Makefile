@@ -18,7 +18,8 @@ update-pip:
 	pip freeze > requirements.txt
 
 pytest:
-	PYTHONPATH=. pytest
+	PYTHONPATH=. pytest --cov=app --cov-report=term-missing tests/
+	coverage html
 
 pytest-ai-routes:
 	PYTHONPATH=. pytest tests/test_ai_routes.py
