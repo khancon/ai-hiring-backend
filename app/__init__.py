@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from app.config import Config
+from app.routes.ai_routes import ai_bp
 
 def create_app():
     # Create the Flask app instance
@@ -8,6 +9,11 @@ def create_app():
 
     # Load configuration from config.py
     app.config.from_object(Config)
+    
+    # Register the AI-related routes blueprint
+    # This blueprint handles all AI-related routes
+    # such as job description generation, resume screening, etc.
+    app.register_blueprint(ai_bp)
 
     # Enable CORS (allow frontend to access backend)
     CORS(app)
