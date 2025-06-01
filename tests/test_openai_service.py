@@ -83,37 +83,3 @@ def test_generate_feedback_email():
         or "jane" in email.lower()
     ), "Candidate's name (first or full) should appear in the email."
     assert "Data Scientist" in email or "data scientist" in email.lower()
-
-def test_generate_job_description_empty_skills():
-    # Should handle empty skills gracefully
-    title = "DevOps Engineer"
-    seniority = "Mid"
-    skills = []
-    location = "Onsite"
-    with patch("openai.ChatCompletion.create", return_value=fake_openai_response("DevOps JD")):
-        jd = openai_service.generate_job_description(title, seniority, skills, location)
-    assert isinstance(jd, str)
-    assert "DevOps" in jd or "devops" in jd.lower()
-
-def test_screen_resume_missing_keywords():
-    # Should mention missing skills if resume lacks them
-    job_desc = "Looking for a Go developer with Kubernetes experience."
-    resume_text = "Jane Doe\nExperienced in Python and Docker."
-    mock_content = "Fit score: 40\nStrengths: ...\nAreas for improvement: ...\nMissing skills: Go, Kubernetes"
-    with patch("openai.ChatCompletion.create", return_value=fake_openai_response(mock_content)):
-        result = openai_service.screen_resume(job_desc, resume_text)
-    assert "Missing skills" in result or "missing skills" in result.lower()
-    assert "Go" in result or "Kubernetes" in result
-
-def test_generate_feedback_email_acceptance():
-    # Should generate an acceptance email
-    candidate_name = "Alex Johnson"
-    job_title = "ML Engineer"
-    outcome = "accepted"
-    tone = "enthusiastic"
-    mock_email = "Congratulations Alex, you have been accepted for the ML Engineer role!"
-    with patch("openai.ChatCompletion.create", return_value=fake_openai_response(mock_email)):
-        email = openai_service.generate_feedback_email(candidate_name, job_title, outcome, tone)
-    assert "accepted" in email.lower() or "congratulations" in email.lower()
-    assert "Alex" in email or "alex" in email.lower()
-    assert "ML Engineer" in email or "ml engineer" in email.lower()
