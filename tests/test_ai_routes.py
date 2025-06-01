@@ -31,8 +31,8 @@ def test_generate_jd_route(client):
 # 2. Test Resume Screening & Fit Scoring Route
 # -----------------------------------------------
 def test_screen_resume_route(client):
-    # Mock both resume parsing and openai screening
-    with patch("app.utils.resume_parser.extract_text_from_resume", return_value="Resume text here"):
+    # Patch the function as used in the route module
+    with patch("app.routes.ai_routes.extract_text_from_resume", return_value="Resume text here"):
         with patch("app.services.openai_service.screen_resume", return_value="Screened!"):
             data = {
                 "job_description": "Python Developer needed."
