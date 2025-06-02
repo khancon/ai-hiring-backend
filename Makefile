@@ -23,6 +23,10 @@ clean:
 update-pip:
 	pip freeze > requirements.txt
 
+pip-compile:
+	pip-compile requirements.in
+	pip install -r requirements.txt
+
 pytest:
 	PYTHONPATH=. pytest --cov=app --cov-report=term-missing tests/
 	coverage html
