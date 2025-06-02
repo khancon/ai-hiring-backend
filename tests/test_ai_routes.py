@@ -51,8 +51,6 @@ def test_generate_jd_missing_skills(client):
     assert "error" in data
     assert "Title and skills are required" in data["error"]
 
-from unittest.mock import patch
-
 def test_generate_jd_openai_exception(client):
     # Patch both the OpenAI call to raise and the logger to spy on error calls
     with patch("app.services.openai_service.generate_job_description", side_effect=Exception("OpenAI error!")), \
