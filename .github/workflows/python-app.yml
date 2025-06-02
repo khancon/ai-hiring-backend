@@ -42,4 +42,3 @@ jobs:
     - name: Run Tests
       run: |
         pytest --cov=app --cov-report=term-missing tests/
-        coverage html
