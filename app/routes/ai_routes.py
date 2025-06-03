@@ -60,9 +60,6 @@ def screen_resume():
         if not resume_text.strip():
             logger.warning("Resume text is empty after extraction")
             return jsonify({"error": "Resume text is empty"}), 400
-        if not job_desc.strip():
-            logger.warning("Job description is empty")
-            return jsonify({"error": "Job description is empty"}), 400
         
         logger.info(f"Screening resume for job description: {job_desc[:50]}...")  # Log first 50 chars
         result = openai_service.screen_resume(job_desc, resume_text)

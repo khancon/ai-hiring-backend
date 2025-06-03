@@ -1,6 +1,6 @@
 import io
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from app import create_app
 
@@ -183,6 +183,65 @@ def test_screen_resume_route_missing_fields(client):
     response = client.post("/screen-resume", data={}, content_type='multipart/form-data')
     assert response.status_code == 400
     assert "error" in response.get_json()
+
+def test_screen_resume_extract_text_failure(client):
+    # Use MagicMock to simulate file upload
+    dummy_file = MagicMock()
+    data = {
+        "job_description": "Some JD"
+    }
+    # Patch extract_text_from_resume to raise Exception
+    with patch("app.routes.ai_routes.extract_text_from_resume", side_effect=Exception("PDF extraction failed")), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post(
+            "/screen-resume",
+            data={
+                "job_description": data["job_description"],
+                "resume": (dummy_file, "resume.pdf")
+            },
+            content_type="multipart/form-data"
+        )
+        assert response.status_code == 500
+        result = response.get_json()
+        assert result["error"] == "Failed to extract resume text"
+        # Confirm logger was called
+        assert any("Error extracting text from resume" in str(call) for call in mock_logger.error.call_args_list)
+
+def test_screen_resume_empty_resume_text(client):
+    dummy_file = MagicMock()
+    with patch("app.routes.ai_routes.extract_text_from_resume", return_value=""), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post(
+            "/screen-resume",
+            data={
+                "job_description": "Some JD",
+                "resume": (dummy_file, "resume.pdf")
+            },
+            content_type="multipart/form-data"
+        )
+        assert response.status_code == 400
+        result = response.get_json()
+        assert result["error"] == "Resume text is empty"
+        # Confirm warning was logged
+        assert any("Resume text is empty after extraction" in str(call) for call in mock_logger.warning.call_args_list)
+
+def test_screen_resume_screening_service_exception(client):
+    dummy_file = MagicMock()
+    with patch("app.routes.ai_routes.extract_text_from_resume", return_value="Some resume text"), \
+         patch("app.routes.ai_routes.openai_service.screen_resume", side_effect=Exception("Service fail")), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post(
+            "/screen-resume",
+            data={
+                "job_description": "Valid JD",
+                "resume": (dummy_file, "resume.pdf")
+            },
+            content_type="multipart/form-data"
+        )
+        assert response.status_code == 500
+        result = response.get_json()
+        assert result["error"] == "Failed to screen resume"
+        assert any("Error screening resume" in str(call) for call in mock_logger.error.call_args_list)
 
 # -----------------------------------------------
 # 3. Test Screening Questions Generator Route
