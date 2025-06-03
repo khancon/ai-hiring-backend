@@ -1,6 +1,6 @@
 import io
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from app import create_app
 
@@ -93,6 +93,68 @@ def test_generate_jd_with_description(client):
             "Backend Engineer", "Senior", ["Python", "Flask"], "Remote", description
         )
 
+def test_generate_jd_empty_location(client):
+    with patch("app.services.openai_service.generate_job_description", return_value="JD for remote") as mock_generate_jd:
+        response = client.post("/generate-jd", json={
+            "title": "Backend Engineer",
+            "skills": ["Python", "Flask"],
+            "seniority": "Senior"
+            # "location": ""  # Empty string triggers default
+        })
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["job_description"] == "JD for remote"
+        mock_generate_jd.assert_called_once_with(
+            "Backend Engineer", "Senior", ["Python", "Flask"], "remote", None
+        )
+
+def test_generate_jd_missing_seniority(client):
+    with patch("app.services.openai_service.generate_job_description", side_effect=ValueError("Seniority level is required to generate a job description.")), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post("/generate-jd", json={
+            "title": "Backend Engineer",
+            "skills": ["Python", "Flask"],
+            # "seniority" is omitted
+            "location": "Remote"
+        })
+        assert response.status_code == 500
+        data = response.get_json()
+        assert "Failed to generate job description" in data["error"]
+        # Confirm logger.error was called
+        error_calls = [call for call in mock_logger.error.call_args_list if "Seniority level is required" in str(call)]
+        assert len(error_calls) >= 1
+
+def test_generate_jd_skills_not_list(client):
+    with patch("app.services.openai_service.generate_job_description", side_effect=ValueError("Skills must be a list of strings.")), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post("/generate-jd", json={
+            "title": "Backend Engineer",
+            "skills": "Python, Flask",  # Not a list!
+            "seniority": "Senior",
+            "location": "Remote"
+        })
+        assert response.status_code == 500
+        data = response.get_json()
+        assert "Failed to generate job description" in data["error"]
+        # Confirm logger.error was called
+        error_calls = [call for call in mock_logger.error.call_args_list if "Skills must be a list of strings." in str(call)]
+        assert len(error_calls) >= 1
+
+def test_generate_jd_skills_contains_non_str(client):
+    with patch("app.services.openai_service.generate_job_description", side_effect=ValueError("Skills must be a list of strings.")), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post("/generate-jd", json={
+            "title": "Backend Engineer",
+            "skills": ["Python", 42],  # 42 is not a str
+            "seniority": "Senior",
+            "location": "Remote"
+        })
+        assert response.status_code == 500
+        data = response.get_json()
+        assert "Failed to generate job description" in data["error"]
+        error_calls = [call for call in mock_logger.error.call_args_list if "Skills must be a list of strings." in str(call)]
+        assert len(error_calls) >= 1
+
 # -----------------------------------------------
 # 2. Test Resume Screening & Fit Scoring Route
 # -----------------------------------------------
@@ -122,6 +184,65 @@ def test_screen_resume_route_missing_fields(client):
     assert response.status_code == 400
     assert "error" in response.get_json()
 
+def test_screen_resume_extract_text_failure(client):
+    # Use MagicMock to simulate file upload
+    dummy_file = MagicMock()
+    data = {
+        "job_description": "Some JD"
+    }
+    # Patch extract_text_from_resume to raise Exception
+    with patch("app.routes.ai_routes.extract_text_from_resume", side_effect=Exception("PDF extraction failed")), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post(
+            "/screen-resume",
+            data={
+                "job_description": data["job_description"],
+                "resume": (dummy_file, "resume.pdf")
+            },
+            content_type="multipart/form-data"
+        )
+        assert response.status_code == 500
+        result = response.get_json()
+        assert result["error"] == "Failed to extract resume text"
+        # Confirm logger was called
+        assert any("Error extracting text from resume" in str(call) for call in mock_logger.error.call_args_list)
+
+def test_screen_resume_empty_resume_text(client):
+    dummy_file = MagicMock()
+    with patch("app.routes.ai_routes.extract_text_from_resume", return_value=""), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post(
+            "/screen-resume",
+            data={
+                "job_description": "Some JD",
+                "resume": (dummy_file, "resume.pdf")
+            },
+            content_type="multipart/form-data"
+        )
+        assert response.status_code == 400
+        result = response.get_json()
+        assert result["error"] == "Resume text is empty"
+        # Confirm warning was logged
+        assert any("Resume text is empty after extraction" in str(call) for call in mock_logger.warning.call_args_list)
+
+def test_screen_resume_screening_service_exception(client):
+    dummy_file = MagicMock()
+    with patch("app.routes.ai_routes.extract_text_from_resume", return_value="Some resume text"), \
+         patch("app.routes.ai_routes.openai_service.screen_resume", side_effect=Exception("Service fail")), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post(
+            "/screen-resume",
+            data={
+                "job_description": "Valid JD",
+                "resume": (dummy_file, "resume.pdf")
+            },
+            content_type="multipart/form-data"
+        )
+        assert response.status_code == 500
+        result = response.get_json()
+        assert result["error"] == "Failed to screen resume"
+        assert any("Error screening resume" in str(call) for call in mock_logger.error.call_args_list)
+
 # -----------------------------------------------
 # 3. Test Screening Questions Generator Route
 # -----------------------------------------------
@@ -136,6 +257,69 @@ def test_generate_questions_route(client):
         assert "questions" in data
         assert data["questions"] == "Questions..."
 
+def test_generate_questions_missing_title(client):
+    # Patch service to ensure no external call
+    with patch("app.routes.ai_routes.openai_service.generate_screening_questions"):
+        response = client.post("/generate-questions", json={
+            "skills": ["Python", "Flask"]
+        })
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["error"] == "Title and skills are required"
+
+def test_generate_questions_missing_skills(client):
+    with patch("app.routes.ai_routes.openai_service.generate_screening_questions"):
+        response = client.post("/generate-questions", json={
+            "title": "Backend Engineer"
+        })
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["error"] == "Title and skills are required"
+
+def test_generate_questions_skills_not_list(client):
+    with patch("app.routes.ai_routes.openai_service.generate_screening_questions"):
+        response = client.post("/generate-questions", json={
+            "title": "Backend Engineer",
+            "skills": "Python,Flask"
+        })
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["error"] == "Skills must be a list of strings"
+
+def test_generate_questions_skills_contains_non_string(client):
+    with patch("app.routes.ai_routes.openai_service.generate_screening_questions"):
+        response = client.post("/generate-questions", json={
+            "title": "Backend Engineer",
+            "skills": ["Python", 123]
+        })
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["error"] == "Skills must be a list of strings"
+
+def test_generate_questions_skills_empty(client):
+    with patch("app.routes.ai_routes.openai_service.generate_screening_questions"):
+        response = client.post("/generate-questions", json={
+            "title": "Backend Engineer",
+            "skills": []
+        })
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["error"] == "Title and skills are required"
+
+def test_generate_questions_openai_exception(client):
+    with patch("app.routes.ai_routes.openai_service.generate_screening_questions", side_effect=Exception("OpenAI error")), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post("/generate-questions", json={
+            "title": "Backend Engineer",
+            "skills": ["Python", "Flask"]
+        })
+        assert response.status_code == 500
+        data = response.get_json()
+        assert data["error"] == "Failed to generate screening questions"
+        error_calls = [call for call in mock_logger.error.call_args_list if "Error generating screening questions" in str(call)]
+        assert len(error_calls) >= 1  # Confirm error was logged
+
+
 # -----------------------------------------------
 # 4. Test Candidate Answer Evaluation Route
 # -----------------------------------------------
@@ -149,6 +333,38 @@ def test_evaluate_candidate_answers_route(client):
         data = response.get_json()
         assert "evaluation" in data
         assert data["evaluation"] == "Eval result!"
+
+def test_evaluate_candidate_answers_missing_questions(client):
+    # No 'questions' key
+    response = client.post("/evaluate", json={
+        "answers": "1. Yes\n2. 3 years of experience."
+    })
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Questions and answers are required"
+
+def test_evaluate_candidate_answers_missing_answers(client):
+    # No 'answers' key
+    response = client.post("/evaluate", json={
+        "questions": "1. Why do you want this job?"
+    })
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Questions and answers are required"
+
+def test_evaluate_candidate_answers_openai_exception(client):
+    with patch("app.routes.ai_routes.openai_service.evaluate_candidate_answers", side_effect=Exception("OpenAI error")), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post("/evaluate", json={
+            "questions": "1. Why do you want this job?",
+            "answers": "Because I am passionate about the field."
+        })
+        assert response.status_code == 500
+        data = response.get_json()
+        assert data["error"] == "Failed to evaluate candidate answers"
+        # Confirm error is logged
+        error_calls = [call for call in mock_logger.error.call_args_list if "Error evaluating candidate answers" in str(call)]
+        assert len(error_calls) >= 1
 
 # -----------------------------------------------
 # 5. Test Feedback Email Generator Route
@@ -165,3 +381,73 @@ def test_generate_feedback_email_route(client):
         data = response.get_json()
         assert "email" in data
         assert data["email"] == "Feedback email here!"
+
+def test_generate_feedback_missing_candidate_name(client):
+    response = client.post("/generate-feedback", json={
+        "job_title": "Engineer",
+        "outcome": "accepted",
+        "tone": "professional"
+    })
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Candidate name, job title, and outcome are required"
+
+def test_generate_feedback_missing_job_title(client):
+    response = client.post("/generate-feedback", json={
+        "candidate_name": "Alex",
+        "outcome": "accepted",
+        "tone": "professional"
+    })
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Candidate name, job title, and outcome are required"
+
+def test_generate_feedback_missing_outcome(client):
+    response = client.post("/generate-feedback", json={
+        "candidate_name": "Alex",
+        "job_title": "Engineer",
+        "tone": "professional"
+    })
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Candidate name, job title, and outcome are required"
+
+def test_generate_feedback_invalid_outcome(client):
+    response = client.post("/generate-feedback", json={
+        "candidate_name": "Alex",
+        "job_title": "Engineer",
+        "outcome": "maybe",  # invalid
+        "tone": "professional"
+    })
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Outcome must be 'accepted' or 'rejected'"
+
+def test_generate_feedback_invalid_tone(client):
+    response = client.post("/generate-feedback", json={
+        "candidate_name": "Alex",
+        "job_title": "Engineer",
+        "outcome": "accepted",
+        "tone": "angry"  # invalid
+    })
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Tone must be 'professional', 'friendly', or 'formal'"
+
+from unittest.mock import patch
+
+def test_generate_feedback_service_exception(client):
+    # Patch openai_service to throw an Exception
+    with patch("app.services.openai_service.generate_feedback_email", side_effect=Exception("Service error")), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post("/generate-feedback", json={
+            "candidate_name": "Alex",
+            "job_title": "Engineer",
+            "outcome": "accepted",
+            "tone": "professional"
+        })
+    assert response.status_code == 500
+    data = response.get_json()
+    assert data["error"] == "Failed to generate feedback email"
+    error_calls = [call for call in mock_logger.error.call_args_list if "Error generating feedback email" in str(call)]
+    assert len(error_calls) >= 1

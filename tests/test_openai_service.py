@@ -20,6 +20,51 @@ def test_generate_job_description():
     assert len(jd.strip()) > 0, "Job description should not be empty."
     assert "Backend Engineer" in jd or "backend engineer" in jd.lower()
 
+def test_generate_job_description_missing_location():
+    # If location is None or empty, it should default to "remote"
+    with patch("app.services.openai_service.client.chat.completions.create", return_value=fake_openai_response("JD for remote")) as mock_openai:
+        jd = openai_service.generate_job_description(
+            title="Backend Engineer",
+            seniority="Senior",
+            skills=["Python", "Flask"],
+            location="",  # Pass empty string
+        )
+        assert isinstance(jd, str)
+        # Confirm that "remote" is used in the prompt (mock side doesn't see prompt, but test for call args)
+        call_args = mock_openai.call_args[1]['messages'][0]['content']
+        assert "Location: remote." in call_args
+
+def test_generate_job_description_missing_seniority():
+    with pytest.raises(RuntimeError) as exc_info:
+        openai_service.generate_job_description(
+            title="Backend Engineer",
+            seniority="",  # triggers error
+            skills=["Python", "Flask"],
+            location="Remote"
+        )
+    # Optionally, check the error message string
+    assert "Failed to generate job description" in str(exc_info.value)
+
+def test_generate_job_description_skills_not_list():
+    with pytest.raises(RuntimeError) as exc_info:
+        openai_service.generate_job_description(
+            title="Backend Engineer",
+            seniority="Senior",
+            skills="Python,Flask",  # Not a list!
+            location="Remote"
+        )
+    assert "Failed to generate job description" in str(exc_info.value)
+
+def test_generate_job_description_skills_contains_non_string():
+    with pytest.raises(RuntimeError) as exc_info:
+        openai_service.generate_job_description(
+            title="Backend Engineer",
+            seniority="Senior",
+            skills=["Python", 123],  # 123 is not a string
+            location="Remote"
+        )
+    assert "Failed to generate job description" in str(exc_info.value)
+
 def test_screen_resume():
     # Test for the Resume Screening & Fit Scoring function
     job_desc = "We are looking for a Python developer with experience in Flask and SQL."

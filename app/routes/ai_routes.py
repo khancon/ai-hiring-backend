@@ -60,9 +60,6 @@ def screen_resume():
         if not resume_text.strip():
             logger.warning("Resume text is empty after extraction")
             return jsonify({"error": "Resume text is empty"}), 400
-        if not job_desc.strip():
-            logger.warning("Job description is empty")
-            return jsonify({"error": "Job description is empty"}), 400
         
         logger.info(f"Screening resume for job description: {job_desc[:50]}...")  # Log first 50 chars
         result = openai_service.screen_resume(job_desc, resume_text)
@@ -92,9 +89,6 @@ def generate_questions():
         if not isinstance(skills, list) or not all(isinstance(skill, str) for skill in skills):
             logger.error("Skills must be a list of strings")
             return jsonify({"error": "Skills must be a list of strings"}), 400
-        if len(skills) < 1:
-            logger.error("At least one skill is required")
-            return jsonify({"error": "At least one skill is required"}), 400
         
         logger.info(f"Generating questions for title: {title}, skills: {skills}")
         questions = openai_service.generate_screening_questions(title, skills)
