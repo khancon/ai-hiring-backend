@@ -93,6 +93,68 @@ def test_generate_jd_with_description(client):
             "Backend Engineer", "Senior", ["Python", "Flask"], "Remote", description
         )
 
+def test_generate_jd_empty_location(client):
+    with patch("app.services.openai_service.generate_job_description", return_value="JD for remote") as mock_generate_jd:
+        response = client.post("/generate-jd", json={
+            "title": "Backend Engineer",
+            "skills": ["Python", "Flask"],
+            "seniority": "Senior"
+            # "location": ""  # Empty string triggers default
+        })
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["job_description"] == "JD for remote"
+        mock_generate_jd.assert_called_once_with(
+            "Backend Engineer", "Senior", ["Python", "Flask"], "remote", None
+        )
+
+def test_generate_jd_missing_seniority(client):
+    with patch("app.services.openai_service.generate_job_description", side_effect=ValueError("Seniority level is required to generate a job description.")), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post("/generate-jd", json={
+            "title": "Backend Engineer",
+            "skills": ["Python", "Flask"],
+            # "seniority" is omitted
+            "location": "Remote"
+        })
+        assert response.status_code == 500
+        data = response.get_json()
+        assert "Failed to generate job description" in data["error"]
+        # Confirm logger.error was called
+        error_calls = [call for call in mock_logger.error.call_args_list if "Seniority level is required" in str(call)]
+        assert len(error_calls) >= 1
+
+def test_generate_jd_skills_not_list(client):
+    with patch("app.services.openai_service.generate_job_description", side_effect=ValueError("Skills must be a list of strings.")), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post("/generate-jd", json={
+            "title": "Backend Engineer",
+            "skills": "Python, Flask",  # Not a list!
+            "seniority": "Senior",
+            "location": "Remote"
+        })
+        assert response.status_code == 500
+        data = response.get_json()
+        assert "Failed to generate job description" in data["error"]
+        # Confirm logger.error was called
+        error_calls = [call for call in mock_logger.error.call_args_list if "Skills must be a list of strings." in str(call)]
+        assert len(error_calls) >= 1
+
+def test_generate_jd_skills_contains_non_str(client):
+    with patch("app.services.openai_service.generate_job_description", side_effect=ValueError("Skills must be a list of strings.")), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post("/generate-jd", json={
+            "title": "Backend Engineer",
+            "skills": ["Python", 42],  # 42 is not a str
+            "seniority": "Senior",
+            "location": "Remote"
+        })
+        assert response.status_code == 500
+        data = response.get_json()
+        assert "Failed to generate job description" in data["error"]
+        error_calls = [call for call in mock_logger.error.call_args_list if "Skills must be a list of strings." in str(call)]
+        assert len(error_calls) >= 1
+
 # -----------------------------------------------
 # 2. Test Resume Screening & Fit Scoring Route
 # -----------------------------------------------
