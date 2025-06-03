@@ -10,9 +10,21 @@ logger = logging.getLogger(__name__)
 # =========================================
 # 1. Job Description Generator
 # =========================================
-def generate_job_description(title, seniority, skills, location="remote"):
+def generate_job_description(title, seniority, skills, location="remote", description=None):
     """
     Uses OpenAI to generate a job description for the given parameters.
+
+    Parameters:
+    - title (str): The job title (e.g., "Software Engineer").
+    - seniority (str): The seniority level (e.g., "Junior", "Mid-level", "Senior").
+    - skills (list): List of required skills (e.g., ["Python", "Flask"]).
+    - location (str): Job location (default is "remote").
+    - description (str): Optional extra description of the role.
+    Returns:
+    - str: Generated job description.
+    Raises:
+    - ValueError: If required parameters are missing or invalid.
+    - RuntimeError: If OpenAI API call fails. 
     """
     try:
         if not title or not skills:
@@ -28,6 +40,7 @@ def generate_job_description(title, seniority, skills, location="remote"):
             f"Write a detailed job description for a {seniority} {title} role. "
             f"Key skills: {', '.join(skills)}. "
             f"Location: {location}."
+            f"{' Extra Description of Role: ' + description if description else ''}"
         )
     
         logger.info(f"Generating job description for {title} ({seniority}) with skills {skills} at {location}")
@@ -50,6 +63,15 @@ def screen_resume(job_desc, resume_text):
     """
     Uses OpenAI to analyze a candidate resume against a job description.
     Outputs a fit score, strengths, weaknesses, and missing skills.
+
+    Parameters:
+    - job_desc (str): The job description to screen against.
+    - resume_text (str): The candidate's resume text.
+    Returns:
+    - str: Analysis result containing fit score, strengths, weaknesses, and missing skills.
+    Raises:
+    - ValueError: If required parameters are missing or invalid.
+    - RuntimeError: If OpenAI API call fails.   
     """
     
     try:
@@ -94,6 +116,15 @@ def screen_resume(job_desc, resume_text):
 def generate_screening_questions(title, skills):
     """
     Uses OpenAI to generate 3-5 screening questions for the specified job title and skills.
+
+    Parameters:
+    - title (str): The job title (e.g., "Software Engineer").
+    - skills (list): List of required skills (e.g., ["Python", "Flask"]).
+    Returns:
+    - str: Generated screening questions.
+    Raises:
+    - ValueError: If required parameters are missing or invalid.
+    - RuntimeError: If OpenAI API call fails.
     """
     
     try:
@@ -129,6 +160,15 @@ def generate_screening_questions(title, skills):
 def evaluate_candidate_answers(questions, answers):
     """
     Uses OpenAI to score candidate answers to screening questions and provide feedback.
+
+    Parameters:
+    - questions (str): The screening questions.
+    - answers (str): The candidate's answers to the questions.
+    Returns:
+    - str: Evaluation of the candidate's answers, including scores and feedback.
+    Raises:
+    - ValueError: If required parameters are missing or invalid.
+    - RuntimeError: If OpenAI API call fails.
     """
     try:
         if not questions or not answers:
@@ -166,6 +206,17 @@ def evaluate_candidate_answers(questions, answers):
 def generate_feedback_email(candidate_name, job_title, outcome, tone="professional"):
     """
     Uses OpenAI to generate a personalized feedback email (acceptance or rejection).
+
+    Parameters:
+    - candidate_name (str): The name of the candidate.
+    - job_title (str): The job title for which the candidate applied.
+    - outcome (str): The outcome of the application ('accepted' or 'rejected').
+    - tone (str): The tone of the email ('professional', 'friendly', 'formal').
+    Returns:
+    - str: Generated feedback email content.
+    Raises:
+    - ValueError: If required parameters are missing or invalid.
+    - RuntimeError: If OpenAI API call fails.
     """
     try:
         if not candidate_name or not job_title or not outcome:

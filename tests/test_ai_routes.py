@@ -73,6 +73,25 @@ def test_generate_jd_openai_exception(client):
     error_calls = [call for call in mock_logger.error.call_args_list if "Error generating job description" in str(call)]
     assert len(error_calls) >= 1  # Should log at least one error
 
+def test_generate_jd_with_description(client):
+    description = "This role will focus on building APIs and mentoring junior engineers."
+    # We want to check that the service is called with the correct args, including description
+    with patch("app.services.openai_service.generate_job_description", return_value="JD with Description") as mock_generate_jd:
+        response = client.post("/generate-jd", json={
+            "title": "Backend Engineer",
+            "seniority": "Senior",
+            "skills": ["Python", "Flask"],
+            "location": "Remote",
+            "description": description
+        })
+        assert response.status_code == 200
+        data = response.get_json()
+        assert "job_description" in data
+        assert data["job_description"] == "JD with Description"
+        # Check description is actually passed to the service function
+        mock_generate_jd.assert_called_once_with(
+            "Backend Engineer", "Senior", ["Python", "Flask"], "Remote", description
+        )
 
 # -----------------------------------------------
 # 2. Test Resume Screening & Fit Scoring Route
