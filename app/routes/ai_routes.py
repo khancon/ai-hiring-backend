@@ -17,6 +17,7 @@ def generate_jd():
     seniority = data.get("seniority", "")
     skills = data.get("skills", [])
     location = data.get("location", "remote")
+    description = data.get("description")
 
     # Call the service function
     try:
@@ -25,7 +26,7 @@ def generate_jd():
             return jsonify({"error": "Title and skills are required"}), 400
         
         logger.info(f"Generating job description for {title} ({seniority}) with skills {skills} at {location}")
-        jd = openai_service.generate_job_description(title, seniority, skills, location)
+        jd = openai_service.generate_job_description(title, seniority, skills, location, description)
     except Exception as e:
         logger.error(f"Error generating job description: {e}")
         return jsonify({"error": "Failed to generate job description"}), 500
