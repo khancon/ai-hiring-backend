@@ -257,6 +257,69 @@ def test_generate_questions_route(client):
         assert "questions" in data
         assert data["questions"] == "Questions..."
 
+def test_generate_questions_missing_title(client):
+    # Patch service to ensure no external call
+    with patch("app.routes.ai_routes.openai_service.generate_screening_questions"):
+        response = client.post("/generate-questions", json={
+            "skills": ["Python", "Flask"]
+        })
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["error"] == "Title and skills are required"
+
+def test_generate_questions_missing_skills(client):
+    with patch("app.routes.ai_routes.openai_service.generate_screening_questions"):
+        response = client.post("/generate-questions", json={
+            "title": "Backend Engineer"
+        })
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["error"] == "Title and skills are required"
+
+def test_generate_questions_skills_not_list(client):
+    with patch("app.routes.ai_routes.openai_service.generate_screening_questions"):
+        response = client.post("/generate-questions", json={
+            "title": "Backend Engineer",
+            "skills": "Python,Flask"
+        })
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["error"] == "Skills must be a list of strings"
+
+def test_generate_questions_skills_contains_non_string(client):
+    with patch("app.routes.ai_routes.openai_service.generate_screening_questions"):
+        response = client.post("/generate-questions", json={
+            "title": "Backend Engineer",
+            "skills": ["Python", 123]
+        })
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["error"] == "Skills must be a list of strings"
+
+def test_generate_questions_skills_empty(client):
+    with patch("app.routes.ai_routes.openai_service.generate_screening_questions"):
+        response = client.post("/generate-questions", json={
+            "title": "Backend Engineer",
+            "skills": []
+        })
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["error"] == "Title and skills are required"
+
+def test_generate_questions_openai_exception(client):
+    with patch("app.routes.ai_routes.openai_service.generate_screening_questions", side_effect=Exception("OpenAI error")), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post("/generate-questions", json={
+            "title": "Backend Engineer",
+            "skills": ["Python", "Flask"]
+        })
+        assert response.status_code == 500
+        data = response.get_json()
+        assert data["error"] == "Failed to generate screening questions"
+        error_calls = [call for call in mock_logger.error.call_args_list if "Error generating screening questions" in str(call)]
+        assert len(error_calls) >= 1  # Confirm error was logged
+
+
 # -----------------------------------------------
 # 4. Test Candidate Answer Evaluation Route
 # -----------------------------------------------

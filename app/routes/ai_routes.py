@@ -89,9 +89,6 @@ def generate_questions():
         if not isinstance(skills, list) or not all(isinstance(skill, str) for skill in skills):
             logger.error("Skills must be a list of strings")
             return jsonify({"error": "Skills must be a list of strings"}), 400
-        if len(skills) < 1:
-            logger.error("At least one skill is required")
-            return jsonify({"error": "At least one skill is required"}), 400
         
         logger.info(f"Generating questions for title: {title}, skills: {skills}")
         questions = openai_service.generate_screening_questions(title, skills)
