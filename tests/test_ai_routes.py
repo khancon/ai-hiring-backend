@@ -334,6 +334,38 @@ def test_evaluate_candidate_answers_route(client):
         assert "evaluation" in data
         assert data["evaluation"] == "Eval result!"
 
+def test_evaluate_candidate_answers_missing_questions(client):
+    # No 'questions' key
+    response = client.post("/evaluate", json={
+        "answers": "1. Yes\n2. 3 years of experience."
+    })
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Questions and answers are required"
+
+def test_evaluate_candidate_answers_missing_answers(client):
+    # No 'answers' key
+    response = client.post("/evaluate", json={
+        "questions": "1. Why do you want this job?"
+    })
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Questions and answers are required"
+
+def test_evaluate_candidate_answers_openai_exception(client):
+    with patch("app.routes.ai_routes.openai_service.evaluate_candidate_answers", side_effect=Exception("OpenAI error")), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post("/evaluate", json={
+            "questions": "1. Why do you want this job?",
+            "answers": "Because I am passionate about the field."
+        })
+        assert response.status_code == 500
+        data = response.get_json()
+        assert data["error"] == "Failed to evaluate candidate answers"
+        # Confirm error is logged
+        error_calls = [call for call in mock_logger.error.call_args_list if "Error evaluating candidate answers" in str(call)]
+        assert len(error_calls) >= 1
+
 # -----------------------------------------------
 # 5. Test Feedback Email Generator Route
 # -----------------------------------------------
@@ -349,3 +381,73 @@ def test_generate_feedback_email_route(client):
         data = response.get_json()
         assert "email" in data
         assert data["email"] == "Feedback email here!"
+
+def test_generate_feedback_missing_candidate_name(client):
+    response = client.post("/generate-feedback", json={
+        "job_title": "Engineer",
+        "outcome": "accepted",
+        "tone": "professional"
+    })
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Candidate name, job title, and outcome are required"
+
+def test_generate_feedback_missing_job_title(client):
+    response = client.post("/generate-feedback", json={
+        "candidate_name": "Alex",
+        "outcome": "accepted",
+        "tone": "professional"
+    })
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Candidate name, job title, and outcome are required"
+
+def test_generate_feedback_missing_outcome(client):
+    response = client.post("/generate-feedback", json={
+        "candidate_name": "Alex",
+        "job_title": "Engineer",
+        "tone": "professional"
+    })
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Candidate name, job title, and outcome are required"
+
+def test_generate_feedback_invalid_outcome(client):
+    response = client.post("/generate-feedback", json={
+        "candidate_name": "Alex",
+        "job_title": "Engineer",
+        "outcome": "maybe",  # invalid
+        "tone": "professional"
+    })
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Outcome must be 'accepted' or 'rejected'"
+
+def test_generate_feedback_invalid_tone(client):
+    response = client.post("/generate-feedback", json={
+        "candidate_name": "Alex",
+        "job_title": "Engineer",
+        "outcome": "accepted",
+        "tone": "angry"  # invalid
+    })
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Tone must be 'professional', 'friendly', or 'formal'"
+
+from unittest.mock import patch
+
+def test_generate_feedback_service_exception(client):
+    # Patch openai_service to throw an Exception
+    with patch("app.services.openai_service.generate_feedback_email", side_effect=Exception("Service error")), \
+         patch("app.routes.ai_routes.logger") as mock_logger:
+        response = client.post("/generate-feedback", json={
+            "candidate_name": "Alex",
+            "job_title": "Engineer",
+            "outcome": "accepted",
+            "tone": "professional"
+        })
+    assert response.status_code == 500
+    data = response.get_json()
+    assert data["error"] == "Failed to generate feedback email"
+    error_calls = [call for call in mock_logger.error.call_args_list if "Error generating feedback email" in str(call)]
+    assert len(error_calls) >= 1
