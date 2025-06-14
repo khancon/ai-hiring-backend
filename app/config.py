@@ -16,3 +16,8 @@ class Config:
     DEBUG = os.getenv("DEBUG", "False").lower() == "true"
     # Example: Add a default model name if you want
     OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1")
+    USERNAME = os.getenv("USERNAME")
+    PASSWORD = os.getenv("PASSWORD")
+    
+    if not USERNAME or not PASSWORD:
+        logger.warning("USERNAME or PASSWORD environment variables are not set. Basic auth will not be enabled.")
