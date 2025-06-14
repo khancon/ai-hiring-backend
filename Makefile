@@ -48,6 +48,8 @@ pytest-resume-parser:
 
 print-env-vars:
 	@echo "OPEN_API_KEY=${OPEN_API_KEY}"
+	@echo "USERNAME=${USERNAME}"
+	@echo "PASSWORD=${PASSWORD}"
 
 # Docker commands
 .PHONY: docker-build docker-run docker
@@ -103,26 +105,31 @@ curl-generate-feedback:
 REMOTE_HOST = https://ai-hiring-backend.onrender.com
 
 curl-remote-generate-jd:
-	curl -X POST $(REMOTE_HOST)/generate-jd \
+	curl -u $(USERNAME):$(PASSWORD) \
+		-X POST $(REMOTE_HOST)/generate-jd \
 		-H "Content-Type: application/json" \
 		-d '{"title":"Backend Engineer", "seniority":"Senior", "skills":["Python","Flask"], "location":"Remote"}' | jq
 
 curl-remote-screen-resume:
-	curl -X POST $(REMOTE_HOST)/screen-resume \
+	curl -u $(USERNAME):$(PASSWORD) \
+		-X POST $(REMOTE_HOST)/screen-resume \
 		-F "job_description=Looking for a Python developer with Flask experience." \
 		-F "resume=@resume.pdf" | jq
 
 curl-remote-generate-questions:
-	curl -X POST $(REMOTE_HOST)/generate-questions \
+	curl -u $(USERNAME):$(PASSWORD) \
+		-X POST $(REMOTE_HOST)/generate-questions \
 		-H "Content-Type: application/json" \
 		-d '{"title":"Frontend Engineer", "skills":["React","CSS"]}' | jq
 
 curl-remote-evaluate:
-	curl -X POST $(REMOTE_HOST)/evaluate \
+	curl -u $(USERNAME):$(PASSWORD) \
+		-X POST $(REMOTE_HOST)/evaluate \
 		-H "Content-Type: application/json" \
 		-d '{"questions":"1. What is React?\n2. How do you use CSS?", "answers":"1. I have 3 years experience.\n2. I use Flexbox and Grid."}' | jq
 
 curl-remote-generate-feedback:
-	curl -X POST $(REMOTE_HOST)/generate-feedback \
+	curl -u $(USERNAME):$(PASSWORD) \
+		-X POST $(REMOTE_HOST)/generate-feedback \
 		-H "Content-Type: application/json" \
 		-d '{"candidate_name":"Jane Doe", "job_title":"Designer", "outcome":"rejected", "tone":"friendly"}' | jq
