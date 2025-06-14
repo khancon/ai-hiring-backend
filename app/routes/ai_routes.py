@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 def require_auth_for_all():
     auth = request.authorization
     if not auth or auth.username != Config.USERNAME or auth.password != Config.PASSWORD:
-        return jsonify({"error": "Unauthorized"}), 401 
+        return jsonify({"ERROR": "Unauthorized. Please provide proper username and password to access MY paid-for OpenAI endpoints"}), 401 
     
 # -----------------------------------------
 # 1. Job Description Generator
