@@ -2,10 +2,18 @@ from flask import Blueprint, request, jsonify
 from app.services import openai_service
 from app.utils.resume_parser import extract_text_from_resume
 import logging
+from app.config import Config
 
 # Create the Blueprint for AI-related routes
 ai_bp = Blueprint("ai", __name__)
 logger = logging.getLogger(__name__)
+
+@ai_bp.before_request
+def require_auth_for_all():
+    auth = request.authorization
+    if not auth or auth.username != Config.USERNAME or auth.password != Config.PASSWORD:
+        return jsonify({"error": "Unauthorized"}), 401 
+    
 # -----------------------------------------
 # 1. Job Description Generator
 # -----------------------------------------
