@@ -2,6 +2,7 @@ ifneq (,$(wildcard .env))
     include .env
     export
 endif
+PASSWORD1 := "hellowworld"
 
 # GIT commands
 prune-branches:
@@ -50,6 +51,7 @@ print-env-vars:
 	@echo "OPEN_API_KEY=${OPEN_API_KEY}"
 	@echo "USERNAME=${USERNAME}"
 	@echo "PASSWORD=${PASSWORD}"
+	@echo "INVALID_PASSWORD=${PASSWORD1}"
 
 # Docker commands
 .PHONY: docker-build docker-run docker
