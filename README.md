@@ -124,10 +124,9 @@ pytest
 
 ---
 
-## Mocking/OpenAI API
+### 8. Deployment
 
-* All critical OpenAI calls are mocked during testing (no actual API calls are made in test runs).
-* If you want to run integration tests against the real API, remove the mocks in the tests.
+This application will be deployed to [Render](https://render.com/) at this [link](https://ai-hiring-backend.onrender.com). You can interact with the live endpoints via the curl commands listed in the makefile under `#Render-hosted API test commands` section. Though you will need the actual USERNAME and PASSWORD from me, as the OpenAI API requests are not free :)
 
 ---
 
