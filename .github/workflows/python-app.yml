@@ -35,8 +35,8 @@ jobs:
     - name: Set up environment variables
       run: |
         echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
-        echo "API_USERNAME=${{ secrets.API_USERNAME }}" >> $GITHUB_ENV
-        echo "API_PASSWORD=${{ secrets.API_PASSWORD }}" >> $GITHUB_ENV
+        echo "USERNAME=${{ secrets.USERNAME }}" >> $GITHUB_ENV
+        echo "PASSWORD=${{ secrets.PASSWORD }}" >> $GITHUB_ENV
 
 
     - name: Set up Python module path
